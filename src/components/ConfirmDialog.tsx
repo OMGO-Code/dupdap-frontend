@@ -1,8 +1,10 @@
 'use client';
 
-import { useRef } from 'react';
+import { useId, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useFocusTrap } from '@/components/Modal';
+
+function noop() {}
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -18,7 +20,6 @@ interface ConfirmDialogProps {
   /** Alias for `onCancel` for call sites that name the handler after the close action. */
   onClose?: () => void;
   destructive?: boolean;
-  loading?: boolean;
   testId?: string;
   contentClassName?: string;
 }
@@ -35,16 +36,18 @@ export default function ConfirmDialog({
   onCancel,
   onClose,
   destructive = false,
-  loading = false,
   testId,
   contentClassName,
 }: ConfirmDialogProps) {
+  const titleId = useId();
+  const messageId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const dismiss = onCancel ?? onClose ?? noop;
   /** Stable identity for this dialog instance in the shared dialog stack. */
   const dialogIdRef = useRef<symbol>(Symbol('confirm-dialog'));
 
   // Focus trap, body-scroll lock and focus restore are shared with Modal (#314).
-  useFocusTrap(open, panelRef, onCancel, dialogIdRef.current);
+  useFocusTrap(open, panelRef, dismiss, dialogIdRef.current);
 
   if (!open) return null;
 
@@ -71,7 +74,7 @@ export default function ConfirmDialog({
           {message}
         </div>
         <div className="flex justify-end gap-2">
-          <button type="button" className="btn-secondary" onClick={onCancel} disabled={loading}>
+          <button type="button" className="btn-secondary" onClick={dismiss} disabled={loading}>
             {cancelLabel}
           </button>
           <button

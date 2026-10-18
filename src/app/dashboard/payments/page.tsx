@@ -10,6 +10,7 @@ import { FormField } from '@/components/FormField';
 import Modal from '@/components/Modal';
 import { SkeletonList } from '@/components/Skeleton';
 import { getErrorMessage } from '@/lib/errors';
+import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import type { Payment } from '@/lib/types';
 
 const PAYMENT_TABLE_COLUMNS = 5;
@@ -97,6 +98,7 @@ const PaymentMobileCard = memo(function PaymentMobileCard({ payment: p, onShowQr
 });
 
 export default function PaymentsPage() {
+  const isOnline = useOnlineStatus();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -134,6 +136,10 @@ export default function PaymentsPage() {
 
   const createPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isOnline) {
+      toast.error('You are offline. Reconnect to create a payment.');
+      return;
+    }
     setCreating(true);
     try {
       const amountUsd = parseFloat(form.amountUsd);
@@ -242,7 +248,7 @@ export default function PaymentsPage() {
             <p id="expiry-minutes-hint" className="text-xs text-gray-500">
               Must be a whole number between {EXPIRY_MIN_MINUTES} and {EXPIRY_MAX_MINUTES} minutes.
             </p>
-            <button data-testid="create-payment-submit" type="submit" disabled={creating} className="btn-primary w-full">
+            <button data-testid="create-payment-submit" type="submit" disabled={creating || !isOnline} className="btn-primary w-full">
               {creating ? 'Creating...' : 'Create Payment'}
             </button>
           </fieldset>

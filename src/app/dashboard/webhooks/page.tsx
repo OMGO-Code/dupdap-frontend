@@ -6,11 +6,13 @@ import toast from '@/lib/toast';
 import { webhooksApi } from '@/lib/api';
 import { WEBHOOK_EVENTS, formatDate, maskSecret } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/errors';
+import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import type { Webhook } from '@/lib/types';
 
 function WebhookSecretRow({ webhook, onRotated }: { webhook: Webhook; onRotated: (secret: string) => void }) {
+  const isOnline = useOnlineStatus();
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [rotating, setRotating] = useState(false);
@@ -72,7 +74,7 @@ function WebhookSecretRow({ webhook, onRotated }: { webhook: Webhook; onRotated:
             type="button"
             data-testid={`rotate-secret-${webhook.id}`}
             onClick={rotate}
-            disabled={rotating}
+            disabled={rotating || !isOnline}
             className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
             aria-label="Rotate signing secret"
           >
@@ -99,6 +101,8 @@ interface WebhookRowProps {
 }
 
 const WebhookRow = memo(function WebhookRow({ webhook: w, onDelete, onSecretRotated }: WebhookRowProps) {
+  const isOnline = useOnlineStatus();
+
   return (
     <div data-testid={`webhook-row-${w.id}`} className="card p-5 flex items-start justify-between">
       <div className="flex-1 min-w-0">
@@ -117,8 +121,9 @@ const WebhookRow = memo(function WebhookRow({ webhook: w, onDelete, onSecretRota
       <button
         data-testid={`delete-webhook-${w.id}`}
         onClick={() => onDelete(w.id)}
+        disabled={!isOnline}
         aria-label={`Delete webhook ${w.url}`}
-        className="text-red-400 hover:text-red-600 ml-4"
+        className="text-red-400 hover:text-red-600 ml-4 disabled:opacity-50"
       >
         <Trash2 className="w-4 h-4" />
       </button>
@@ -127,6 +132,7 @@ const WebhookRow = memo(function WebhookRow({ webhook: w, onDelete, onSecretRota
 });
 
 export default function WebhooksPage() {
+  const isOnline = useOnlineStatus();
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ url: '', events: [] as string[], secret: '' });
@@ -142,6 +148,10 @@ export default function WebhooksPage() {
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isOnline) {
+      toast.error('You are offline. Reconnect to create a webhook.');
+      return;
+    }
     if (form.events.length === 0) {
       setFormError('Select at least one event');
       toast.error('Select at least one event');
@@ -172,6 +182,10 @@ export default function WebhooksPage() {
   };
 
   const remove = async (id: string) => {
+    if (!isOnline) {
+      toast.error('You are offline. Reconnect to remove this webhook.');
+      return;
+    }
     setDeleting(true);
     try {
       await webhooksApi.remove(id);
@@ -307,7 +321,7 @@ export default function WebhooksPage() {
                 {formError}
               </p>
             )}
-            <button data-testid="webhook-submit-button" type="submit" disabled={creating} className="btn-primary w-full">
+            <button data-testid="webhook-submit-button" type="submit" disabled={creating || !isOnline} className="btn-primary w-full">
               {creating ? 'Creating...' : 'Create Webhook'}
             </button>
           </fieldset>
@@ -316,7 +330,7 @@ export default function WebhooksPage() {
             <button type="button" onClick={closeCreateModal} className="btn-secondary">
               Cancel
             </button>
-            <button type="submit" data-testid="create-webhook-submit" disabled={creating} className="btn-primary">
+            <button type="submit" data-testid="create-webhook-submit" disabled={creating || !isOnline} className="btn-primary">
               {creating ? 'Creating…' : 'Create Webhook'}
             </button>
           </div>

@@ -15,6 +15,7 @@ import { useAuthStore } from '@/lib/store';
 import { adminApi } from '@/lib/api';
 import { formatUsd, formatDate, STATUS_COLORS } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/errors';
+import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import { SkeletonList, SkeletonTableRows } from '@/components/Skeleton';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
@@ -60,6 +61,7 @@ const FILTER_DEBOUNCE_MS = 300;
 
 export default function AdminSettlementsPage() {
   const { token } = useAuthStore();
+  const isOnline = useOnlineStatus();
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -136,6 +138,10 @@ export default function AdminSettlementsPage() {
   };
 
   const handleRetry = async (settlementId: string) => {
+    if (!isOnline) {
+      toast.error('You are offline. Reconnect to retry this settlement.');
+      return;
+    }
     try {
       setActionLoading(settlementId);
       await adminApi.retrySettlement(settlementId);
@@ -148,6 +154,10 @@ export default function AdminSettlementsPage() {
   };
 
   const handleApprove = async (settlementId: string) => {
+    if (!isOnline) {
+      toast.error('You are offline. Reconnect to approve this settlement.');
+      return;
+    }
     try {
       setActionLoading(settlementId);
       await adminApi.approveSettlement(settlementId);
@@ -276,7 +286,7 @@ export default function AdminSettlementsPage() {
                     {settlement.status === 'failed' && (
                       <button
                         onClick={() => setPendingAction({ type: 'retry', settlementId: settlement.id })}
-                        disabled={actionLoading === settlement.id}
+                        disabled={actionLoading === settlement.id || !isOnline}
                         className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50"
                       >
                         {actionLoading === settlement.id ? 'Retrying...' : 'Retry'}
@@ -285,7 +295,7 @@ export default function AdminSettlementsPage() {
                     {settlement.status === 'pending_approval' && (
                       <button
                         onClick={() => setPendingAction({ type: 'approve', settlementId: settlement.id })}
-                        disabled={actionLoading === settlement.id}
+                        disabled={actionLoading === settlement.id || !isOnline}
                         className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50"
                       >
                         {actionLoading === settlement.id ? 'Approving...' : 'Approve'}
@@ -382,7 +392,7 @@ export default function AdminSettlementsPage() {
                           {settlement.status === 'failed' && (
                             <button
                               onClick={() => setPendingAction({ type: 'retry', settlementId: settlement.id })}
-                              disabled={actionLoading === settlement.id}
+                              disabled={actionLoading === settlement.id || !isOnline}
                               className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50"
                             >
                               {actionLoading === settlement.id ? 'Retrying...' : 'Retry'}
@@ -391,7 +401,7 @@ export default function AdminSettlementsPage() {
                           {settlement.status === 'pending_approval' && (
                             <button
                               onClick={() => setPendingAction({ type: 'approve', settlementId: settlement.id })}
-                              disabled={actionLoading === settlement.id}
+                              disabled={actionLoading === settlement.id || !isOnline}
                               className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50"
                             >
                               {actionLoading === settlement.id ? 'Approving...' : 'Approve'}

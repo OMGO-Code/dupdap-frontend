@@ -18,10 +18,9 @@ import {
 import { useAuthStore } from '@/lib/store';
 import { isAdmin } from '@/lib/auth';
 import { isNavItemActive } from '@/lib/nav-active';
-import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/lib/store';
-import { isAdmin } from '@/lib/auth';
 import { useFocusTrap } from '@/lib/useFocusTrap';
+import { useAdminGuard, useAdminRedirect } from '@/lib/useAdminGuard';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { cn } from '@/lib/utils';
 
 declare global {
@@ -65,6 +64,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // The admin authorization gate is shared with the admin layout so the
+  // decision is made during render, not only by a redirect effect (#357).
+  const adminStatus = useAdminGuard();
+  useAdminRedirect(adminStatus);
   // The off-canvas mobile drawer is a modal surface: it reuses the shared
   // focus-trap so focus moves into the drawer on open, Tab cycles inside it,
   // and focus returns to the hamburger button on close (#356).
@@ -248,7 +251,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       {/* Main */}
-      <main className="flex-1 overflow-auto pt-14 md:pt-0">{children}</main>
+      <main className="flex-1 overflow-auto pt-14 md:pt-0">
+        <OfflineBanner />
+        {children}
+      </main>
     </div>
   );
 }
