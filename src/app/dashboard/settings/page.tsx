@@ -7,9 +7,11 @@ import { merchantApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/store';
 import { FormField } from '@/components/FormField';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import BankAccountsSection from '@/components/BankAccountsSection';
 import { getErrorMessage } from '@/lib/errors';
 import { useOnlineStatus } from '@/lib/useOnlineStatus';
 import { maskSecret } from '@/lib/utils';
+import { ApiRateLimitIndicator } from '@/components/ApiRateLimitIndicator';
 
 const EMPTY_FORM = { businessName: '', country: '', bankAccountNumber: '', bankCode: '', bankName: '' };
 
@@ -211,6 +213,8 @@ export default function SettingsPage() {
         </form>
       </div>
 
+      <BankAccountsSection />
+
       <div className="card p-6">
         <h2 className="font-semibold mb-2">API Key</h2>
         <p className="text-sm text-gray-500 mb-4">Use your API key to authenticate server-side API requests.</p>
@@ -247,6 +251,8 @@ export default function SettingsPage() {
             </label>
           ))}
         </div>
+
+        <ApiRateLimitIndicator />
 
         {apiKey ? (
           <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-4">

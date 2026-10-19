@@ -107,6 +107,7 @@ export const merchantApi = {
   profile: () => api.get<Merchant>('/merchants/me'),
   update: (data: Record<string, string>) => api.patch<Merchant>('/merchants/me', data),
   generateApiKey: (scopes?: string[]) => api.post<ApiKey>('/merchants/api-keys', { scopes }),
+  rateLimit: () => api.get('/merchants/api-keys/rate-limit'),
 };
 
 export const webhooksApi = {
